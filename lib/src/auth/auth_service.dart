@@ -30,4 +30,10 @@ class AuthService {
       throw Exception(decodedResponse['errors'][0]['message']);
     }
   }
+
+  /// Logs out the currently authenticated user.
+  Future<void> logout() async {
+    await client.post('auth/logout', {});
+    client.setToken(null);
+  }
 }
