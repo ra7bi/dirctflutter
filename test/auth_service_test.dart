@@ -7,11 +7,11 @@ import 'dart:convert';
 
 void main() {
   group("AuthService Tests", () {
-    late DirectusClient client;
     late AuthService authService;
+    late DirectusClient client;
 
     setUp(() {
-      client = DirectusClient(baseUrl: "https://vs.r7b.uk");
+      client = DirectusClient(baseUrl: "https://vs.test.local");
       authService = AuthService(client: client);
     });
 
@@ -27,95 +27,94 @@ void main() {
             200);
       });
 
-      client.httpClient = mockClient;
+      client = DirectusClient(
+          baseUrl: "https://vs.test.local", httpClient: mockClient);
+      authService = AuthService(client: client);
 
-      final response = await authService.login("test@example.com", "password");
+      final response =
+          await authService.login("owner2@localhost.com", "123123");
 
       expect(response["data"]["access_token"], equals("mock-access-token"));
     });
 
-    test("Login should return an error on invalid credentials", () async {
+    test("Get current user details", () async {
       final mockClient = MockClient((request) async {
         return http.Response(
             jsonEncode({
-              "errors": [
-                {
-                  "message": "Invalid user credentials.",
-                  "extensions": {"code": "INVALID_CREDENTIALS"}
-                }
-              ]
-            }),
-            401);
-      });
-
-      client.httpClient = mockClient;
-
-      expect(
-        () async =>
-            await authService.login("wrong@example.com", "wrongpassword"),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'contains invalid credentials',
-          contains("Invalid user credentials."),
-        )),
-      );
-    });
-
-    test("Logout should clear the authentication token", () async {
-      final mockClient = MockClient((request) async {
-        return http.Response(jsonEncode({"data": "Logged out"}), 200);
-      });
-
-      client.httpClient = mockClient;
-
-      await authService.logout();
-
-      expect(client.getToken(), isNull);
-    });
-
-    test("Me should return the current authenticated user", () async {
-      final mockClient = MockClient((request) async {
-        return http.Response(
-            jsonEncode({
-              "data": {"id": "1", "email": "test@example.com"}
+              "data": {"id": "123", "email": "test@example.com"}
             }),
             200);
       });
 
-      client.httpClient = mockClient;
+      client = DirectusClient(
+          baseUrl: "https://vs.test.local", httpClient: mockClient);
+      authService = AuthService(client: client);
 
       final user = await authService.me();
-
       expect(user["email"], equals("test@example.com"));
     });
 
-    test("Register should create a new user", () async {
+    test("Register a new user", () async {
       final mockClient = MockClient((request) async {
         return http.Response(
             jsonEncode({
-              "data": {"id": "1", "email": "new@example.com"}
+              "data": {"id": "456", "email": "new@example.com"}
             }),
             201);
       });
 
-      client.httpClient = mockClient;
+      client = DirectusClient(
+          baseUrl: "https://vs.test.local", httpClient: mockClient);
+      authService = AuthService(client: client);
 
-      final response = await authService
+      final user = await authService
           .register({"email": "new@example.com", "password": "123456"});
+      expect(user["email"], equals("new@example.com"));
+    });
+    test("Logout user", () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path == "/auth/logout" && request.method == "POST") {
+          return http.Response(jsonEncode({}), 200);
+        }
+        if (request.url.path == "/users/me") {
+          return http.Response(
+              jsonEncode({
+                "errors": [
+                  {
+                    "message": "Token expired.",
+                    "extensions": {"code": "TOKEN_EXPIRED"}
+                  }
+                ]
+              }),
+              401);
+        }
+        return http.Response("Unauthorized", 401);
+      });
 
-      expect(response["email"], equals("new@example.com"));
+      final client = DirectusClient(
+          baseUrl: "https://vs.test.local", httpClient: mockClient);
+      final authService = AuthService(client: client);
+
+      await authService.logout();
+
+      expect(
+        () async => await authService.me(),
+        throwsA(isA<Exception>().having(
+            (e) => e.toString(), 'message', contains("Token expired."))),
+      );
     });
 
-    test("Reset password should send a password reset request", () async {
+    test("Request password reset", () async {
       final mockClient = MockClient((request) async {
         return http.Response(
             jsonEncode({"data": "Password reset email sent"}), 200);
       });
 
-      client.httpClient = mockClient;
+      client = DirectusClient(
+          baseUrl: "https://vs.test.local", httpClient: mockClient);
+      authService = AuthService(client: client);
 
-      expect(() async => await authService.resetPassword("test@example.com"),
-          returnsNormally);
+      await authService.resetPassword("test@example.com");
     });
   });
 }

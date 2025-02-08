@@ -5,9 +5,31 @@ import 'dart:convert';
 /// Service to handle authentication with Directus.
 class AuthService {
   final DirectusClient client;
+  String? _refreshToken;
 
   /// Constructs `AuthService` with a `DirectusClient`
   AuthService({required this.client});
+
+  /// Refreshes the authentication token.
+  Future<void> refreshToken() async {
+    if (_refreshToken == null) {
+      throw Exception("No refresh token available.");
+    }
+
+    final response = await client.post(
+      "auth/refresh",
+      {'refresh_token': _refreshToken},
+    );
+
+    final decodedResponse = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      client.setToken(decodedResponse['data']['access_token']);
+      _refreshToken =
+          decodedResponse['data']['refresh_token']; // Update refresh token
+    } else {
+      throw Exception(decodedResponse['errors'][0]['message']);
+    }
+  }
 
   /// Logs in a user with the provided [email] and [password].
   /// Returns a map containing authentication tokens.
@@ -41,12 +63,10 @@ class AuthService {
   Future<Map<String, dynamic>> me() async {
     final response = await client.get('users/me');
 
-    final decodedResponse = jsonDecode(response.body);
-
     if (response.statusCode == 200) {
-      return decodedResponse['data'];
+      return jsonDecode(response.body)['data'];
     } else {
-      throw Exception(decodedResponse['errors'][0]['message']);
+      throw Exception(jsonDecode(response.body)['errors'][0]['message']);
     }
   }
 

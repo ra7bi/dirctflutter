@@ -11,7 +11,7 @@ void main() {
     late CrudService crudService;
 
     setUp(() {
-      client = DirectusClient(baseUrl: "https://vs.r7b.uk");
+      client = DirectusClient(baseUrl: "https://vs.test.local");
       crudService = CrudService(client: client);
     });
 
