@@ -20,3 +20,11 @@
 - Fixed `bodyAsJson()` issue by replacing it with `jsonDecode(response.body)`.
 - Improved error handling in `AuthService` and `CrudService`.
 - Passed all tests successfully.
+
+
+
+## [0.1.3] - YYYY-MM-DD
+### Fixed
+- Fixed `me()` method to properly handle unauthorized responses.
+- Updated logout handling to correctly clear tokens and throw an exception when accessing `me()` after logout.
+- Improved test coverage for authentication functions.
