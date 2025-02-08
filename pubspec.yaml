@@ -6,7 +6,7 @@ repository: https://github.com/ra7bi/dirctflutter.git
 issue_tracker: https://github.com/ra7bi/dirctflutter.git/issues
 
 environment:
-  sdk: ">=2.17.0 <3.0.0"
+  sdk: ">=2.17.0 <4.0.0"
 
 dependencies:
   http: ^1.0.0
