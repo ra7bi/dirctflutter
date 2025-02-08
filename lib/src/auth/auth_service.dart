@@ -36,4 +36,43 @@ class AuthService {
     await client.post('auth/logout', {});
     client.setToken(null);
   }
+
+  /// Retrieves the currently authenticated user's details.
+  Future<Map<String, dynamic>> me() async {
+    final response = await client.get('users/me');
+
+    final decodedResponse = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return decodedResponse['data'];
+    } else {
+      throw Exception(decodedResponse['errors'][0]['message']);
+    }
+  }
+
+  /// Registers a new user with the provided data.
+  Future<Map<String, dynamic>> register(Map<String, dynamic> userData) async {
+    final response = await client.post('users', userData);
+
+    final decodedResponse = jsonDecode(response.body);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return decodedResponse['data'];
+    } else {
+      throw Exception(decodedResponse['errors'][0]['message']);
+    }
+  }
+
+  /// Requests a password reset for the given [email].
+  /// Directus will send a password reset email if the email exists.
+  Future<void> resetPassword(String email) async {
+    final response =
+        await client.post('auth/password/request', {'email': email});
+
+    final decodedResponse = jsonDecode(response.body);
+
+    if (response.statusCode != 200) {
+      throw Exception(decodedResponse['errors'][0]['message']);
+    }
+  }
 }

@@ -1,6 +1,6 @@
 name: dirctflutter
 description: A Dart package for integrating Directus with Flutter applications.
-version: 0.1.0
+version: 0.1.2
 homepage: https://github.com/ra7bi/dirctflutter.git
 repository: https://github.com/ra7bi/dirctflutter.git
 issue_tracker: https://github.com/ra7bi/dirctflutter.git/issues

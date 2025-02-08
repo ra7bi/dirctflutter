@@ -101,4 +101,20 @@ class DirectusClient {
       throw Exception("HTTP Error ${response.statusCode}: ${response.body}");
     }
   }
+
+  /// Retrieves the currently stored authentication token.
+  String? getToken() {
+    return _token;
+  }
+
+  /// Handles API errors by parsing the response and throwing an exception.
+  void handleAPIError(http.Response response) {
+    final decodedResponse = jsonDecode(response.body);
+
+    if (decodedResponse['errors'] != null) {
+      throw Exception(decodedResponse['errors'][0]['message']);
+    } else {
+      throw Exception("Unexpected API error: ${response.body}");
+    }
+  }
 }

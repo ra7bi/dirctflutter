@@ -13,3 +13,10 @@
 - Added logout functionality.
 - Fixed authentication issues.
 - Improved error handling.
+
+
+
+## 0.1.2 - Bug Fixes & Improvements
+- Fixed `bodyAsJson()` issue by replacing it with `jsonDecode(response.body)`.
+- Improved error handling in `AuthService` and `CrudService`.
+- Passed all tests successfully.

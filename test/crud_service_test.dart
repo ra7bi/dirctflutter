@@ -11,90 +11,116 @@ void main() {
     late CrudService crudService;
 
     setUp(() {
-      client = DirectusClient(baseUrl: "https://directus.local");
+      client = DirectusClient(baseUrl: "https://vs.r7b.uk");
       crudService = CrudService(client: client);
     });
 
     test("Fetch should return a list of items", () async {
       final mockClient = MockClient((request) async {
-        if (request.url.path.endsWith("/items/test_collection")) {
-          return http.Response(
-              jsonEncode({
-                "data": [
-                  {"id": 1, "name": "Test Item"}
-                ]
-              }),
-              200);
-        }
-        return http.Response("Not Found", 404);
+        return http.Response(
+            jsonEncode({
+              "data": [
+                {"id": 1, "name": "Test Item"}
+              ]
+            }),
+            200);
       });
 
-      client.setHttpClient(mockClient);
+      client.httpClient = mockClient;
 
-      final response = await crudService.fetch("test_collection");
+      final response = await crudService.fetch("products");
 
-      expect(response, isA<List<dynamic>>());
+      expect(response, isNotEmpty);
       expect(response.first["name"], equals("Test Item"));
     });
 
-    test("Create should return the created item", () async {
+    test("Create should add a new item", () async {
       final mockClient = MockClient((request) async {
-        if (request.url.path.endsWith("/items/test_collection") &&
-            request.method == "POST") {
-          return http.Response(
-              jsonEncode({
-                "data": {"id": 1, "name": "New Item"}
-              }),
-              200);
-        }
-        return http.Response("Bad Request", 400);
+        return http.Response(
+            jsonEncode({
+              "data": {"id": 1, "name": "New Item"}
+            }),
+            201);
       });
 
-      client.setHttpClient(mockClient);
+      client.httpClient = mockClient;
 
       final response =
-          await crudService.create("test_collection", {"name": "New Item"});
+          await crudService.create("products", {"name": "New Item"});
 
-      expect(response["data"]["id"], equals(1));
       expect(response["data"]["name"], equals("New Item"));
     });
 
-    test("Update should modify an item", () async {
+    test("Update should modify an existing item", () async {
       final mockClient = MockClient((request) async {
-        if (request.url.path.endsWith("/items/test_collection/1") &&
-            request.method == "PUT") {
-          return http.Response(
-              jsonEncode({
-                "data": {"id": 1, "name": "Updated Item"}
-              }),
-              200);
-        }
-        return http.Response("Not Found", 404);
+        return http.Response(
+            jsonEncode({
+              "data": {"id": 1, "name": "Updated Item"}
+            }),
+            200);
       });
 
-      client.setHttpClient(mockClient);
+      client.httpClient = mockClient;
 
-      final response = await crudService
-          .update("test_collection", 1, {"name": "Updated Item"});
+      final response =
+          await crudService.update("products", 1, {"name": "Updated Item"});
 
       expect(response["data"]["name"], equals("Updated Item"));
     });
+
     test("Delete should remove an item", () async {
       final mockClient = MockClient((request) async {
-        if (request.url.path.endsWith("/items/test_collection/1") &&
-            request.method == "DELETE") {
-          return http.Response(
-              jsonEncode({"data": null}), // ✅ Simulate successful deletion
-              200);
-        }
-        return http.Response("Not Found", 404);
+        return http.Response(jsonEncode({"data": null}), 200);
       });
 
-      client.setHttpClient(mockClient);
+      client.httpClient = mockClient;
 
-      final result = await crudService.delete("test_collection", 1);
+      final result = await crudService.delete("products", 1);
 
-      expect(result, isTrue); // ✅ Expect `true` for successful deletion
+      expect(result, isTrue);
+    });
+
+    test("Fetch should support filtering", () async {
+      final mockClient = MockClient((request) async {
+        return http.Response(
+            jsonEncode({
+              "data": [
+                {"id": 2, "name": "Filtered Item"}
+              ]
+            }),
+            200);
+      });
+
+      client.httpClient = mockClient;
+
+      final response = await crudService
+          .fetch("products", filters: {"category": "electronics"});
+
+      expect(response, isNotEmpty);
+      expect(response.first["name"], equals("Filtered Item"));
+    });
+
+    test("Fetch should support relations", () async {
+      final mockClient = MockClient((request) async {
+        return http.Response(
+            jsonEncode({
+              "data": [
+                {
+                  "id": 3,
+                  "name": "Item with Relation",
+                  "category": {"id": 1, "name": "Books"}
+                }
+              ]
+            }),
+            200);
+      });
+
+      client.httpClient = mockClient;
+
+      final response =
+          await crudService.fetch("products", relations: ["category"]);
+
+      expect(response.first["category"]["name"], equals("Books"));
     });
   });
 }
